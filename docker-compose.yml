@@ -1,0 +1,57 @@
+version: "3.7"
+services:
+  producer:
+    build: ./producer
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - pubsub
+    env_file:
+      - ./producer.env
+
+  consumer:
+    build: ./consumer
+    depends_on:
+      - postgres
+      - rabbitmq
+      - producer
+    networks:
+      - pubsub
+    env_file:
+      - ./consumer.env
+
+  rabbitmq:
+    container_name: pubsub_rabbitmq
+    image: rabbitmq:3.8.1-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - pubsub
+    logging:
+      driver: none
+
+  postgres:
+    container_name: postgres_containerv1
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rootpassword}
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - pubsub
+    restart: unless-stopped
+    logging:
+      driver: none
+
+networks:
+  pubsub:
+    driver: bridge
+
+volumes:
+    postgres:
